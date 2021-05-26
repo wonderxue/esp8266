@@ -1,34 +1,45 @@
 #ifndef __I2C_H__
 #define __I2C_H__
 
+#include <Arduino.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <Arduino.h>
-
 //硬件配置
-#define _spi_SDA     14
-#define _spi_SCL     16
-#define _spi_SCL_L   digitalWrite(_spi_SCL,LOW)
-#define _spi_SCL_H   digitalWrite(_spi_SCL,HIGH)
-#define _spi_SDA_L   digitalWrite(_spi_SDA,LOW)
-#define _spi_SDA_H   digitalWrite(_spi_SDA,HIGH)
-#define _spi_SDA_In  pinMode(_spi_SDA,INPUT)
-#define _spi_SDA_Out pinMode(_spi_SDA,OUTPUT)
-#define _spi_SCL_Out pinMode(_spi_SCL,OUTPUT)
-#define _spi_SDA_Read digitalRead(_spi_SDA)
-#define _spi_i2cDelay(x) delay_us(x)
-extern void delay_us(int us);
+#define _i2c_SDA     13
+#define _i2c_SCL     12
+
+#define _i2c_PinMode(x,y)  pinMode(x, y)
+#define _i2c_PinWrite(x,y) digitalWrite(x, y)
+#define _i2c_PinRead(x)    digitalRead(x)
+
+#define _i2c_INPUT INPUT
+#define _i2c_OUTPUT OUTPUT
+#define _i2c_HIGH HIGH
+#define _i2c_LOW LOW
+
+#define _i2c_SCL_L   _i2c_PinWrite(_i2c_SCL,_i2c_LOW)
+#define _i2c_SCL_H   _i2c_PinWrite(_i2c_SCL,_i2c_HIGH)
+#define _i2c_SDA_L   _i2c_PinWrite(_i2c_SDA,_i2c_LOW)
+#define _i2c_SDA_H   _i2c_PinWrite(_i2c_SDA,_i2c_HIGH)
+#define _i2c_SDA_In  _i2c_PinMode(_i2c_SDA,_i2c_INPUT)
+#define _i2c_SDA_Out _i2c_PinMode(_i2c_SDA,_i2c_OUTPUT)
+#define _i2c_SCL_Out _i2c_PinMode(_i2c_SCL,_i2c_OUTPUT)
+#define _i2c_SDA_Read _i2c_PinRead(_i2c_SDA)
+#define _i2c_DelayUs(x) delayUs(x)
+
 //功能定义
-unsigned char spiBegin(unsigned short dev_addr);
-void spiSetTimeOut(int count);
-_Bool spiWriteByte(unsigned char fid,unsigned char data);
-_Bool spiWriteRegByte(unsigned char fid,unsigned char reg_addr,unsigned char data);
-unsigned char spiReadbyte(unsigned char fid);
-unsigned char spiReadRegByte(unsigned char fid,unsigned char reg_addr);
+unsigned char i2cBegin(unsigned short dev_addr);
+void i2cSetTimeOut(int count);
+_Bool i2cWriteByte(unsigned char fid,unsigned char data);
+_Bool i2cWriteRegByte(unsigned char fid,unsigned char reg_addr,unsigned char data);
+unsigned char i2cReadbyte(unsigned char fid);
+unsigned char i2cReadRegByte(unsigned char fid,unsigned char reg_addr);
 
 #ifdef __cplusplus
 }
 #endif
+
 #endif //__I2C_H__

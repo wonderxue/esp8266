@@ -8,7 +8,7 @@
 
 #ifndef LV_PORT_DISP_TEMPL_H
 #define LV_PORT_DISP_TEMPL_H
-
+#include "tft.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,7 +29,7 @@ extern "C" {
 /**********************
  * GLOBAL PROTOTYPES
  **********************/
-void lv_port_disp_init(void);
+void lv_port_disp_init();
 /**********************
  *      MACROS
  **********************/

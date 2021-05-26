@@ -1,39 +1,47 @@
 #include "mpu.h"
 
-struct GY_Config GY_Config = {0x19, 0x1a, 0x1b, 0x1c, 0x6b};
-struct Data_Read Data_Read = {0x3b, 0x3c, 0x3d, 0x3e, 0x3f, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48};
-unsigned char _mpu_fd;
-
-void _GY_Write_Cmd(unsigned char reg_address, unsigned char cmd)
+struct _mpu_Config
 {
-    spiWriteRegByte(_mpu_fd, reg_address, cmd);
+    unsigned char Sample_Rate;
+    unsigned char Low_Filter_Freq;
+    unsigned char GY_Self_Check;
+    unsigned char AC_Self_Check;
+    unsigned char Pow_Manage;
+};
+struct _mpu_Config _mpu_Config = {0x19, 0x1a, 0x1b, 0x1c, 0x6b};
+struct mpu_Read mpu_Read = {0x3b, 0x3d, 0x3f, 0x41, 0x43, 0x45, 0x47};
+unsigned char _mpu_Fd;
+
+void _mpu_WriteCmd(unsigned char reg_Address, unsigned char cmd)
+{
+    i2cWriteRegByte(_mpu_Fd, reg_Address, cmd);
 }
 
-unsigned char _GY_Read_Byte(unsigned char reg_address)
+unsigned char _mpu_ReadByte(unsigned char reg_Address)
 {
     unsigned char data;
-    data = spiReadRegByte(_mpu_fd, reg_address);
+    data = i2cReadRegByte(_mpu_Fd, reg_Address);
     return data;
 }
 
-void GY_Init()
+void mpuInit()
 {
-    _mpu_fd = spiBegin(GY_Adress);
-    _GY_Write_Cmd(GY_Config.Pow_Manage, 0x80);
-    delay(100);
-    _GY_Write_Cmd(GY_Config.Pow_Manage, 0x00);
-    _GY_Write_Cmd(GY_Config.Sample_Rate, 0x07);
-    _GY_Write_Cmd(GY_Config.AC_Self_Check, 0x00); //+/-2g
-    _GY_Write_Cmd(GY_Config.GY_Self_Check, 0x18); //+/-2000/s
-    _GY_Write_Cmd(GY_Config.Low_Filter_Freq, 0x06);
+    _mpu_Fd = i2cBegin(_mpu_Adress);
+    _mpu_WriteCmd(_mpu_Config.Pow_Manage, 0x80);
+    _mpu_DelayMs(100);
+    _mpu_WriteCmd(_mpu_Config.Pow_Manage, 0x00);
+    _mpu_WriteCmd(_mpu_Config.Sample_Rate, 0x07);
+    _mpu_WriteCmd(_mpu_Config.AC_Self_Check, 0x00); //+/-2g
+    _mpu_WriteCmd(_mpu_Config.GY_Self_Check, 0x18); //+/-2000/s
+    _mpu_WriteCmd(_mpu_Config.Low_Filter_Freq, 0x06);
 }
 
-short GY_Read_Data(unsigned char reg_address)
+short mpuReadData(unsigned char reg_Address)
 {
     unsigned char H, L;
     short temp;
-    H = _GY_Read_Byte(reg_address);
-    L = _GY_Read_Byte(reg_address + 1);
+    H = _mpu_ReadByte(reg_Address);
+    L = _mpu_ReadByte(reg_Address + 1);
     temp = (H << 8) + L;
     return temp;
 }

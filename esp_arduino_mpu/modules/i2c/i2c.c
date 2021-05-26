@@ -1,206 +1,205 @@
 #include "i2c.h"
-unsigned char _spi_timeOut = 200;
-__attribute__((weak)) void _spi_I2cError(char *code)
+extern void ErrorReport(char * source,char * code);
+unsigned char _i2c_TimeOut = 200;
+void _i2c_Error(char *code)
 {
-    //#warning redefine function i2cError may better
-    //HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, RESET);
-    //while (1)
-    //    ;
+    ErrorReport("--I2C--",code);
 }
-void _spi_Start()
+
+void _i2c_Start()
 {
-    _spi_SDA_Out;
-    _spi_SDA_H;
-    _spi_SCL_H;
-    _spi_i2cDelay(5);
-    _spi_SDA_L;
-    _spi_i2cDelay(6);
-    _spi_SCL_L;
+    _i2c_SDA_Out;
+    _i2c_SDA_H;
+    _i2c_SCL_H;
+    _i2c_DelayUs(5);
+    _i2c_SDA_L;
+    _i2c_DelayUs(6);
+    _i2c_SCL_L;
 }
-void _spi_Stop()
+void _i2c_Stop()
 {
-    _spi_SDA_Out;
-    _spi_SCL_L;
-    _spi_SDA_L;
-    _spi_SCL_H;
-    _spi_i2cDelay(6);
-    _spi_SDA_H;
-    _spi_i2cDelay(6);
+    _i2c_SDA_Out;
+    _i2c_SCL_L;
+    _i2c_SDA_L;
+    _i2c_SCL_H;
+    _i2c_DelayUs(6);
+    _i2c_SDA_H;
+    _i2c_DelayUs(6);
 }
-void _spi_SendAck(_Bool ack) //低 应答
+void _i2c_SendAck(_Bool ack) //低 应答
 {
-    _spi_SCL_L;
-    _spi_SDA_Out;
+    _i2c_SCL_L;
+    _i2c_SDA_Out;
     if (ack)
-        _spi_SDA_H;
+        _i2c_SDA_H;
     else
-        _spi_SDA_L;
-    _spi_i2cDelay(2);
-    _spi_SCL_H;
-    _spi_i2cDelay(5);
-    _spi_SCL_L;
+        _i2c_SDA_L;
+    _i2c_DelayUs(2);
+    _i2c_SCL_H;
+    _i2c_DelayUs(5);
+    _i2c_SCL_L;
 }
-_Bool _spi_WaitAck()
+_Bool _i2c_WaitAck()
 {
     unsigned char tempTime = 0;
-    _spi_SDA_In; //配置为上拉输入。
-    _spi_SDA_H;  //主机释放数据总线，等待从机产生应答信号
-    _spi_i2cDelay(1);
-    _spi_SCL_H;
-    _spi_i2cDelay(1);
+    _i2c_SDA_In; //配置为上拉输入。
+    _i2c_SDA_H;  //主机释放数据总线，等待从机产生应答信号
+    _i2c_DelayUs(1);
+    _i2c_SCL_H;
+    _i2c_DelayUs(1);
     //等待从机对数据总线的操作。低电平代表应答
-    while (_spi_SDA_Read)
+    while (_i2c_SDA_Read)
     {
         tempTime++;
         //这个属于软件延时，不一定准确。
-        if (tempTime > _spi_timeOut) //如果时间超时，没有应答就停止。
+        if (tempTime > _i2c_TimeOut) //如果时间超时，没有应答就停止。
         {
-            _spi_Stop();
+            _i2c_Stop();
             return 1; //没有响应的话返回1.
         }
     }
-    _spi_SCL_L;
+    _i2c_SCL_L;
     return 0; //如果有响应的话就返回0.
 }
-_Bool _spi_Write(unsigned char data)
+_Bool _i2c_Write(unsigned char data)
 {
-    _spi_SDA_Out;
-    _spi_SCL_L;
-    _spi_i2cDelay(2);
+    _i2c_SDA_Out;
+    _i2c_SCL_L;
+    _i2c_DelayUs(2);
     for (int i = 0; i < 8; i++) //从高位开始一位一位地传送
     {
         //发数据放到数据线上
         if ((data & 0x80) > 0) //当前的最高位为1
-            _spi_SDA_H;             //拉高数据线
+            _i2c_SDA_H;        //拉高数据线
         else
-            _spi_SDA_L;
+            _i2c_SDA_L;
         data = data << 1; //数据左移一位
         //开始发送数据
-        _spi_SCL_H;
-        _spi_i2cDelay(2);
+        _i2c_SCL_H;
+        _i2c_DelayUs(2);
         //上一个数据发送完毕，为下一个数据发送准备
-        _spi_SCL_L;
-        _spi_i2cDelay(2);
+        _i2c_SCL_L;
+        _i2c_DelayUs(2);
     }
-    return _spi_WaitAck();
+    return _i2c_WaitAck();
 }
-unsigned char _spi_Read(_Bool ack)
+unsigned char _i2c_Read(_Bool ack)
 {
     unsigned char data = 0; //接收到的数据
-    _spi_SDA_In;
+    _i2c_SDA_In;
     for (int i = 0; i < 8; i++)
     {
         //数据准备
-        _spi_SCL_L;
-        _spi_i2cDelay(2);
-        _spi_SCL_H;        //主机开始读数据，从机不能再改变数据了，即改变SDA的电平
-        if (_spi_SDA_Read) //接收到的是1
-            data++;
         data = data << 1;
-        _spi_i2cDelay(1);
+        _i2c_SCL_L;
+        _i2c_DelayUs(2);
+        _i2c_SCL_H;        //主机开始读数据，从机不能再改变数据了，即改变SDA的电平
+        if (_i2c_SDA_Read) //接收到的是1
+            data++;
+        _i2c_DelayUs(1);
     }
-    _spi_SendAck(ack);
+    _i2c_SendAck(ack);
     return data;
 }
-unsigned char spiBegin(unsigned short dev_addr)
+unsigned char i2cBegin(unsigned short dev_addr)
 {
-    _spi_SCL_Out;
-    _spi_SDA_Out;
+    _i2c_SCL_Out;
+    _i2c_SDA_Out;
     return dev_addr;
 }
-void spiSetTimeOut(int count)
+void i2cSetTimeOut(int count)
 {
-    _spi_timeOut=count;
+    _i2c_TimeOut = count;
 }
-_Bool spiWriteByte(unsigned char fid, unsigned char data)
-{
-    _Bool status;
-    unsigned char dev_addr = fid << 1;
-    _spi_Start();
-    status = _spi_Write(dev_addr);
-    if (status)
-    {
-        _spi_Stop();
-        _spi_I2cError("write dev_addr error");
-        return status;
-    }
-    status = _spi_Write(data);
-    if (status)
-        _spi_I2cError("write data error");
-    _spi_Stop();
-    return status;
-}
-_Bool spiWriteRegByte(unsigned char fid, unsigned char reg_addr, unsigned char data)
+_Bool i2cWriteByte(unsigned char fid, unsigned char data)
 {
     _Bool status;
     unsigned char dev_addr = fid << 1;
-    _spi_Start();
-    status = _spi_Write(dev_addr);
+    _i2c_Start();
+    status = _i2c_Write(dev_addr);
     if (status)
     {
-        _spi_Stop();
-        _spi_I2cError("write dev_addr error");
+        _i2c_Stop();
+        _i2c_Error("write dev_addr error");
         return status;
     }
-    status = _spi_Write(reg_addr);
+    status = _i2c_Write(data);
     if (status)
-    {
-        _spi_Stop();
-        _spi_I2cError("write reg_addr error");
-        return status;
-    }
-    status = _spi_Write(data);
-    if (status)
-        _spi_I2cError("write data error");
-    _spi_Stop();
+        _i2c_Error("write data error");
+    _i2c_Stop();
     return status;
 }
-unsigned char spiReadbyte(unsigned char fid)
+_Bool i2cWriteRegByte(unsigned char fid, unsigned char reg_addr, unsigned char data)
+{
+    _Bool status;
+    unsigned char dev_addr = fid << 1;
+    _i2c_Start();
+    status = _i2c_Write(dev_addr);
+    if (status)
+    {
+        _i2c_Stop();
+        _i2c_Error("write dev_addr error");
+        return status;
+    }
+    status = _i2c_Write(reg_addr);
+    if (status)
+    {
+        _i2c_Stop();
+        _i2c_Error("write reg_addr error");
+        return status;
+    }
+    status = _i2c_Write(data);
+    if (status)
+        _i2c_Error("write data error");
+    _i2c_Stop();
+    return status;
+}
+unsigned char i2cReadbyte(unsigned char fid)
 {
     _Bool status;
     unsigned char data;
-    unsigned char dev_addr = fid << 1 + 1;
-    _spi_Start();
-    status = _spi_Write(dev_addr);
+    unsigned char dev_addr = (fid << 1) + 1;
+    _i2c_Start();
+    status = _i2c_Write(dev_addr);
     if (status)
     {
-        _spi_Stop();
-        _spi_I2cError("read dev_addr error");
+        _i2c_Stop();
+        _i2c_Error("read dev_addr error");
         return status;
     }
-    data = _spi_Read(1);
-    _spi_Stop();
+    data = _i2c_Read(1);
+    _i2c_Stop();
     return data;
 }
-unsigned char spiReadRegByte(unsigned char fid, unsigned char reg_addr)
+unsigned char i2cReadRegByte(unsigned char fid, unsigned char reg_addr)
 {
     _Bool status;
     unsigned char data;
     unsigned char dev_addr = fid << 1;
-    _spi_Start();
-    status = _spi_Write(dev_addr);
+    _i2c_Start();
+    status = _i2c_Write(dev_addr);
     if (status)
     {
-        _spi_Stop();
-        _spi_I2cError("read dev_addr1 error");
+        _i2c_Stop();
+        _i2c_Error("read dev_addr1 error");
         return status;
     }
-    status = _spi_Write(reg_addr);
+    status = _i2c_Write(reg_addr);
     if (status)
     {
-        _spi_Stop();
-        _spi_I2cError("read reg_addr error");
+        _i2c_Stop();
+        _i2c_Error("read reg_addr error");
         return status;
     }
-    _spi_Start();
-    status = _spi_Write(dev_addr + 1);
+    _i2c_Start();
+    status = _i2c_Write(dev_addr + 1);
     if (status)
     {
-        _spi_Stop();
-        _spi_I2cError("read dev_addr2 error");
+        _i2c_Stop();
+        _i2c_Error("read dev_addr2 error");
         return status;
     }
-    data = _spi_Read(1);
-    _spi_Stop();
+    data = _i2c_Read(1);
+    _i2c_Stop();
     return data;
 }

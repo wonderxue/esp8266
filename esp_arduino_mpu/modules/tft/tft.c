@@ -1,250 +1,216 @@
 #include "tft.h"
+unsigned char _tft_Fd;
 
-void TFT_SPI_Init(void)
+void _tft_WriteCmd(unsigned char Cmd)
 {
-  pinMode(TFT_SCL,OUTPUT);
-  pinMode(TFT_SDA,OUTPUT);
-  pinMode(TFT_RST,OUTPUT);
-  pinMode(TFT_RS,OUTPUT);
-  pinMode(TFT_CS,OUTPUT);
-  pinMode(TFT_LED,OUTPUT);
+   _tft_RS_L;
+   spiByteTransfer(_tft_Fd,Cmd,spiMode.spi_Mode_2);
 }
 
-void SPI_WriteData(unsigned char Data)
+void _tft_WriteByteData(unsigned char Data)
 {
-  unsigned char i=0;
-  for(i=8;i>0;i--)
-  {
-    if(Data&0x80) 
-      TFT_SDA_SET;
-    else 
-      TFT_SDA_CLR;
-    TFT_SCL_CLR;       
-    TFT_SCL_SET;
-    Data<<=1; 
-  }
+   _tft_RS_H;
+   spiByteTransfer(_tft_Fd,Data,spiMode.spi_Mode_2);
 }
 
-void TFT_WriteCmd(unsigned char Cmd)
+void _tft_WriteWordData(unsigned short Data)
 {
-   TFT_CS_CLR;
-   TFT_RS_CLR;
-   SPI_WriteData(Cmd);
-   TFT_CS_SET;
+   _tft_RS_H;
+   spiWordTransfer(_tft_Fd,Data,spiMode.spi_Mode_2);
 }
 
-void TFT_WriteData_U8(unsigned char Data)
+void tftWriteReg(unsigned char Index,unsigned char Data)
 {
-   TFT_CS_CLR;
-   TFT_RS_SET;
-   SPI_WriteData(Data);
-   TFT_CS_SET; 
+  _tft_WriteCmd(Index);
+  _tft_WriteByteData(Data);
 }
 
-void TFT_WriteData_U16(unsigned short Data)
+void tftReset(void)
 {
-   TFT_CS_CLR;
-   TFT_RS_SET;
-   SPI_WriteData(Data>>8);
-   SPI_WriteData(Data);
-   TFT_CS_SET; 
+  _tft_RST_L;
+  _tft_DelayMs(100);
+  _tft_RST_H;
+  _tft_DelayMs(50);
 }
 
-void TFT_WriteReg(unsigned char Index,unsigned char Data)
-{
-  TFT_WriteCmd(Index);
-  TFT_WriteData_U8(Data);
-}
-
-void TFT_Reset(void)
-{
-  TFT_RST_CLR;
-  delay(100);
-  TFT_RST_SET;
-  delay(50);
-}
-
-void TFT_Init(void)
+void tftInit(void)
 { 
-  TFT_SPI_Init();
-  TFT_Reset();
-  TFT_LED_SET;
+  _tft_LED_Out;
+  _tft_RS_Out;
+  _tft_RST_Out;
+  _tft_Fd=spiRegist(_tft_CS);
+  tftReset();
+  _tft_LED_H;
   //0x10sleepin  0x11sleepout 
-  TFT_WriteCmd(0x11);
-  delay(120);
+  _tft_WriteCmd(0x11);
+  _tft_DelayMs(120);
   
   //Frame Rate Control (In normal mode/ Full colors)
-  TFT_WriteCmd(0xB1);
-  TFT_WriteData_U8(0x01); 
-  TFT_WriteData_U8(0x2C); 
-  TFT_WriteData_U8(0x2D); 
+  _tft_WriteCmd(0xB1);
+  _tft_WriteByteData(0x01); 
+  _tft_WriteByteData(0x2C); 
+  _tft_WriteByteData(0x2D); 
 
   //Frame Rate Control (In Idle mode/ 8-colors)
-  TFT_WriteCmd(0xB2); 
-  TFT_WriteData_U8(0x01); 
-  TFT_WriteData_U8(0x2C); 
-  TFT_WriteData_U8(0x2D); 
+  _tft_WriteCmd(0xB2); 
+  _tft_WriteByteData(0x01); 
+  _tft_WriteByteData(0x2C); 
+  _tft_WriteByteData(0x2D); 
   
   //Frame Rate Control (In Partial mode/ full colors)
-  TFT_WriteCmd(0xB3); 
-  TFT_WriteData_U8(0x01); 
-  TFT_WriteData_U8(0x2C); 
-  TFT_WriteData_U8(0x2D); 
-  TFT_WriteData_U8(0x01); 
-  TFT_WriteData_U8(0x2C); 
-  TFT_WriteData_U8(0x2D); 
+  _tft_WriteCmd(0xB3); 
+  _tft_WriteByteData(0x01); 
+  _tft_WriteByteData(0x2C); 
+  _tft_WriteByteData(0x2D); 
+  _tft_WriteByteData(0x01); 
+  _tft_WriteByteData(0x2C); 
+  _tft_WriteByteData(0x2D); 
   
   //Display Inversion Control
-  TFT_WriteCmd(0xB4); 
-  TFT_WriteData_U8(0x07); 
+  _tft_WriteCmd(0xB4); 
+  _tft_WriteByteData(0x07); 
   
   //Power Control 1
-  TFT_WriteCmd(0xC0); 
-  TFT_WriteData_U8(0xA2); 
-  TFT_WriteData_U8(0x02); 
-  TFT_WriteData_U8(0x84); 
+  _tft_WriteCmd(0xC0); 
+  _tft_WriteByteData(0xA2); 
+  _tft_WriteByteData(0x02); 
+  _tft_WriteByteData(0x84); 
   
   //Power Control 2
-  TFT_WriteCmd(0xC1); 
-  TFT_WriteData_U8(0xC5); 
+  _tft_WriteCmd(0xC1); 
+  _tft_WriteByteData(0xC5); 
 
   //Power Control 3 (in Normal mode/ Full colors)
-  TFT_WriteCmd(0xC2); 
-  TFT_WriteData_U8(0x0A); 
-  TFT_WriteData_U8(0x00); 
+  _tft_WriteCmd(0xC2); 
+  _tft_WriteByteData(0x0A); 
+  _tft_WriteByteData(0x00); 
 
   //Power Control 4 (in Idle mode/ 8-colors)
-  TFT_WriteCmd(0xC3); 
-  TFT_WriteData_U8(0x8A); 
-  TFT_WriteData_U8(0x2A); 
+  _tft_WriteCmd(0xC3); 
+  _tft_WriteByteData(0x8A); 
+  _tft_WriteByteData(0x2A); 
   
   //Power Control 5 (in Partial mode/ full-colors)
-  TFT_WriteCmd(0xC4); 
-  TFT_WriteData_U8(0x8A); 
-  TFT_WriteData_U8(0xEE); 
+  _tft_WriteCmd(0xC4); 
+  _tft_WriteByteData(0x8A); 
+  _tft_WriteByteData(0xEE); 
   
   //VCOM Control 1
-  TFT_WriteCmd(0xC5); 
-  TFT_WriteData_U8(0x0E); 
+  _tft_WriteCmd(0xC5); 
+  _tft_WriteByteData(0x0E); 
   
   //Memory Data Access Control
-  TFT_WriteCmd(0x36);
-  TFT_WriteData_U8(0xC0); 
+  _tft_WriteCmd(0x36);
+  _tft_WriteByteData(0xC0); 
   
   //Gamma (‘+’polarity) Correction Characteristics Setting
-  TFT_WriteCmd(0xe0); 
-  TFT_WriteData_U8(0x0f); 
-  TFT_WriteData_U8(0x1a); 
-  TFT_WriteData_U8(0x0f); 
-  TFT_WriteData_U8(0x18); 
-  TFT_WriteData_U8(0x2f); 
-  TFT_WriteData_U8(0x28); 
-  TFT_WriteData_U8(0x20); 
-  TFT_WriteData_U8(0x22); 
-  TFT_WriteData_U8(0x1f); 
-  TFT_WriteData_U8(0x1b); 
-  TFT_WriteData_U8(0x23); 
-  TFT_WriteData_U8(0x37); 
-  TFT_WriteData_U8(0x00);   
-  TFT_WriteData_U8(0x07); 
-  TFT_WriteData_U8(0x02); 
-  TFT_WriteData_U8(0x10); 
+  _tft_WriteCmd(0xe0); 
+  _tft_WriteByteData(0x0f); 
+  _tft_WriteByteData(0x1a); 
+  _tft_WriteByteData(0x0f); 
+  _tft_WriteByteData(0x18); 
+  _tft_WriteByteData(0x2f); 
+  _tft_WriteByteData(0x28); 
+  _tft_WriteByteData(0x20); 
+  _tft_WriteByteData(0x22); 
+  _tft_WriteByteData(0x1f); 
+  _tft_WriteByteData(0x1b); 
+  _tft_WriteByteData(0x23); 
+  _tft_WriteByteData(0x37); 
+  _tft_WriteByteData(0x00);   
+  _tft_WriteByteData(0x07); 
+  _tft_WriteByteData(0x02); 
+  _tft_WriteByteData(0x10); 
   
   //Gamma ‘-’polarity Correction Characteristics Setting
-  TFT_WriteCmd(0xe1); 
-  TFT_WriteData_U8(0x0f); 
-  TFT_WriteData_U8(0x1b); 
-  TFT_WriteData_U8(0x0f); 
-  TFT_WriteData_U8(0x17); 
-  TFT_WriteData_U8(0x33); 
-  TFT_WriteData_U8(0x2c); 
-  TFT_WriteData_U8(0x29); 
-  TFT_WriteData_U8(0x2e); 
-  TFT_WriteData_U8(0x30); 
-  TFT_WriteData_U8(0x30); 
-  TFT_WriteData_U8(0x39); 
-  TFT_WriteData_U8(0x3f); 
-  TFT_WriteData_U8(0x00); 
-  TFT_WriteData_U8(0x07); 
-  TFT_WriteData_U8(0x03); 
-  TFT_WriteData_U8(0x10);  
+  _tft_WriteCmd(0xe1); 
+  _tft_WriteByteData(0x0f); 
+  _tft_WriteByteData(0x1b); 
+  _tft_WriteByteData(0x0f); 
+  _tft_WriteByteData(0x17); 
+  _tft_WriteByteData(0x33); 
+  _tft_WriteByteData(0x2c); 
+  _tft_WriteByteData(0x29); 
+  _tft_WriteByteData(0x2e); 
+  _tft_WriteByteData(0x30); 
+  _tft_WriteByteData(0x30); 
+  _tft_WriteByteData(0x39); 
+  _tft_WriteByteData(0x3f); 
+  _tft_WriteByteData(0x00); 
+  _tft_WriteByteData(0x07); 
+  _tft_WriteByteData(0x03); 
+  _tft_WriteByteData(0x10);  
   
   //Column Address Set
-  TFT_WriteCmd(0x2a);
-  TFT_WriteData_U8(0x00);
-  TFT_WriteData_U8(0x00);
-  TFT_WriteData_U8(0x00);
-  TFT_WriteData_U8(0x7f);
+  _tft_WriteCmd(0x2a);
+  _tft_WriteByteData(0x00);
+  _tft_WriteByteData(0x00);
+  _tft_WriteByteData(0x00);
+  _tft_WriteByteData(0x7f);
 
   //Row Address Set
-  TFT_WriteCmd(0x2b);
-  TFT_WriteData_U8(0x00);
-  TFT_WriteData_U8(0x00);
-  TFT_WriteData_U8(0x00);
-  TFT_WriteData_U8(0x9f);
+  _tft_WriteCmd(0x2b);
+  _tft_WriteByteData(0x00);
+  _tft_WriteByteData(0x00);
+  _tft_WriteByteData(0x00);
+  _tft_WriteByteData(0x9f);
   
   //
-  TFT_WriteCmd(0xF0);
-  TFT_WriteData_U8(0x01); 
+  _tft_WriteCmd(0xF0);
+  _tft_WriteByteData(0x01); 
   
-  TFT_WriteCmd(0xF6);
-  TFT_WriteData_U8(0x00); 
+  _tft_WriteCmd(0xF6);
+  _tft_WriteByteData(0x00); 
   
   //Interface Pixel Format
-  TFT_WriteCmd(0x3A);
-  TFT_WriteData_U8(0x05); 
+  _tft_WriteCmd(0x3A);
+  _tft_WriteByteData(0x05); 
   
   //Display On
-  TFT_WriteCmd(0x29);
+  _tft_WriteCmd(0x29);
 }
 
-void TFT_SetRegion(unsigned short x_start,unsigned short y_start,unsigned short x_end,unsigned short y_end)
+void tftSetRegion(unsigned short x_start,unsigned short y_start,unsigned short x_end,unsigned short y_end)
 {   
-  TFT_WriteCmd(0x2a);
-  TFT_WriteData_U8(0x00);
-  TFT_WriteData_U8(x_start);
-  TFT_WriteData_U8(0x00);
-  TFT_WriteData_U8(x_end);
+  _tft_WriteCmd(0x2a);
+  _tft_WriteByteData(0x00);
+  _tft_WriteByteData(x_start);
+  _tft_WriteByteData(0x00);
+  _tft_WriteByteData(x_end);
 
-  TFT_WriteCmd(0x2b);
-  TFT_WriteData_U8(0x00);
-  TFT_WriteData_U8(y_start);
-  TFT_WriteData_U8(0x00);
-  TFT_WriteData_U8(y_end);
+  _tft_WriteCmd(0x2b);
+  _tft_WriteByteData(0x00);
+  _tft_WriteByteData(y_start);
+  _tft_WriteByteData(0x00);
+  _tft_WriteByteData(y_end);
   
-  TFT_WriteCmd(0x2c);
+  _tft_WriteCmd(0x2c);
 }
 
-void TFT_SetXY(unsigned short x,unsigned short y)
+void tftSetXY(unsigned short x,unsigned short y)
 {
-    TFT_SetRegion(x,y,x,y);
+    tftSetRegion(x,y,x,y);
 }
 
-void Gui_DrawPoint(unsigned short x,unsigned short y,unsigned short Data)
+void tftDrawArea(unsigned short x1,unsigned short y1,unsigned short x2,unsigned short y2,unsigned short *Data)
 {
-  TFT_SetRegion(x,y,x+1,y+1);
-  TFT_WriteData_U16(Data);
-}
-void Gui_DrawArea(unsigned short x1,unsigned short y1,unsigned short x2,unsigned short y2,lv_color_t *color)
-{
-  unsigned short x,y;
-  TFT_SetRegion(x1,y1,x2,y2);
-  for(y=y1;y<=y2;y++)
-  for(x=x1;x<=x2;x++)
+  unsigned char i,j;
+  tftSetRegion(x1,y1,x2,y2);
+  for(i=y1;i<=y2;i++)
+  for(j=x1;j<=x2;j++)
   {
-    TFT_WriteData_U16(0x0000);
-    color++;
-    WDT_FEED();
+    _tft_WriteWordData(*Data);
+    Data++;
   }
 }
-void TFT_Clear(unsigned short Color)               
+void tftClear(unsigned short Color)
 { 
    unsigned int i,m;
-   TFT_SetRegion(0,0,127,179);
-   TFT_WriteCmd(0x2C);
+   tftSetRegion(0,0,127,179);
+   _tft_WriteCmd(0x2C);
    for(i=0;i<128;i++)
     for(m=0;m<180;m++)
     { 
-      TFT_WriteData_U16(Color);
+      _tft_WriteWordData(Color);
     }   
 }
